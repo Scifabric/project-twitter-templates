@@ -1,0 +1,5 @@
+{
+    "name": "Twitter Emotions Classification",
+    "short_name": "twitter-emotions",
+    "description": "Classify emotions conveyed by a tweet"
+}
