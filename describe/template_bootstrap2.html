@@ -1,0 +1,126 @@
+<style type="text/css">
+    .tweetContainer {
+        border-radius: 5px;
+        background-color: #f5f5f5;
+        color: #8bbf36;
+        padding: 12px;
+    }
+    #answer {
+        width: 100%;
+        border-radius: 5px;
+        border-color: #8bbf36;
+    }
+</style>
+
+<div id="warning" class="modal fade">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title"></h4>
+      </div>
+      <div class="modal-body">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn" data-dismiss="modal">Close</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
+<div class="row skeleton">
+    <div class="span8 offset2">
+        <h2 id="question">What should the user do? Briefly explain here...</h2>
+    </div>
+    <div class="span8 offset2">
+        <p style="margin-top:30px;"><span id="i18n_working_task">Task</span> <span id="task-id">#</span></p>
+    </div>
+</div>
+<div class="row">
+    <div class="top20 span8 offset2">
+        <p class="tweetContainer">
+            <span id="tweet"></span>
+        </p>
+    </div>
+    <div class="top20 span8 offset2">
+        <textarea id="answer" rows="3"></textarea>
+        <button class="btn btn-answer">Save</button>
+    </div>
+</div>
+<script type="text/javascript">
+(function() {
+// Default language
+var userLocale = "en";
+// Translations
+var messages = {"en": {
+                        "i18n_working_task": "Task",
+                      },
+                "es": {
+                        "i18n_working_task": "Tarea",
+                      },
+               };
+// Update userLocale with server side information
+$(document).ready(function(){
+    userLocale = document.getElementById('PYBOSSA_USER_LOCALE').textContent.trim();
+});
+
+function i18n_translate() {
+    var ids = Object.keys(messages[userLocale])
+    for (i=0; i<ids.length; i++) {
+        console.log("Translating: " + ids[i]);
+        document.getElementById(ids[i]).innerHTML = messages[userLocale][ids[i]];
+    }
+}
+
+pybossa.taskLoaded(function(task, deferred) {
+    deferred.resolve(task);
+});
+
+function warn_user(type, msg) {
+    var p = $("<p/>");
+    var title;
+
+    if (type === 'info') {
+        title = "Hi there! Please, read this carefully"
+    }
+
+    if (type === 'error') {
+        title = "Ooops! Something went wrong!"
+    }
+    if (type === 'warning') {
+        title = "Hi there! Please, read this carefully"
+    }
+    p.text(msg);
+    $(".modal-title").text(title);
+    $(".modal-body").append(p);
+    $("#warning").modal();
+}
+
+pybossa.presentTask(function(task, deferred) {
+    if ( !$.isEmptyObject(task) ) {
+        i18n_translate();
+        $('#task-id').html(task.id);
+        document.getElementById('answer').value = "";
+        document.getElementById('tweet').innerHTML = task.info.text;
+        $('.btn-answer').off('click').on('click', function(evt) {
+            var answer = document.getElementById('answer').value;
+            if (typeof answer != 'undefined') {
+                pybossa.saveTask(task.id, answer).done(function() {
+                    console.log(answer)
+                    deferred.resolve();
+                });
+            }
+            else {
+                warn_user('error', 'Unexpected type of answer.');
+            }
+        });
+    }
+    else {
+        $(".skeleton").hide();
+        warn_user('info', 'You have contributed to all available tasks! Thanks!');
+    }
+});
+
+pybossa.run('twitter-describe');
+})();
+</script>
